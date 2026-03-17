@@ -1,6 +1,6 @@
 ---
 name: commit-push
-description: 更新 README、执行规范化 git 提交并推送到 origin 与 github 远程仓库。用于用户要求“提交并推送代码”“同步 README 的已实现功能并提交”“按 own_mybatis 规范 commit/push”等场景。
+description: 更新 README、执行规范化 git 提交并推送到 origin 与 github 远程仓库。用于用户要求“提交并推送代码”“同步 README 的已实现功能并提交”“按 BliBIliRag 规范 commit/push”等场景。
 ---
 
 # Commit Push
@@ -30,11 +30,11 @@ description: 更新 README、执行规范化 git 提交并推送到 origin 与 g
 按以下规范创建提交：
 
 ```text
-<type>(own_mybatis): <中文描述>
+<type>(BliBIliRag): <中文描述>
 ```
 
 - `type`：`feat` / `fix` / `docs` / `refactor` / `test` / `chore` / `style` / `perf` / `ci` / `build` / `revert`
-- `scope` 固定为 `own_mybatis`
+- `scope` 固定为 `BliBIliRag`
 - 描述使用中文，简洁说明本次变更内容
 - 提交信息中不要包含 `Co-Authored-By` 等署名信息
 
