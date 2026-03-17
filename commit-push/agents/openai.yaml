@@ -1,4 +1,0 @@
-interface:
-  display_name: "Commit Push"
-  short_description: "按固定规范更新 README、提交并推送代码"
-  default_prompt: "Use $commit-push to update README if needed, create a compliant git commit, and push to origin and github."
