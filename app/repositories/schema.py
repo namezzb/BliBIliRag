@@ -1,0 +1,49 @@
+SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bvid VARCHAR(20) UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    owner_name VARCHAR(100),
+    owner_mid INTEGER,
+    duration INTEGER,
+    pubdate INTEGER,
+    tags TEXT,
+    view_count INTEGER,
+    like_count INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subtitles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bvid VARCHAR(20) NOT NULL,
+    source VARCHAR(20),
+    content TEXT NOT NULL,
+    language VARCHAR(10) DEFAULT 'zh',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS summaries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bvid VARCHAR(20) NOT NULL,
+    type VARCHAR(20),
+    content TEXT NOT NULL,
+    timestamp VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bvid VARCHAR(20) NOT NULL,
+    task_type VARCHAR(20),
+    status VARCHAR(20),
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE CASCADE
+);
+"""
+
