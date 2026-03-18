@@ -128,6 +128,27 @@ class SubtitleRepository:
             )
             return int(cursor.lastrowid)
 
+    def replace_subtitle_for_source(
+        self,
+        bvid: str,
+        source: SubtitleSource,
+        content: str,
+        language: str = "zh",
+    ) -> int:
+        with self.database.connection() as conn:
+            conn.execute(
+                "DELETE FROM subtitles WHERE bvid = ? AND source = ?",
+                (bvid, source.value),
+            )
+            cursor = conn.execute(
+                """
+                INSERT INTO subtitles (bvid, source, content, language)
+                VALUES (?, ?, ?, ?)
+                """,
+                (bvid, source.value, content, language),
+            )
+            return int(cursor.lastrowid)
+
     def list_by_bvid(self, bvid: str) -> list[dict[str, Any]]:
         with self.database.connection() as conn:
             rows = conn.execute(
