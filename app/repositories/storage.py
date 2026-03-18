@@ -187,6 +187,10 @@ class SummaryRepository:
             ).fetchall()
         return [_row_to_dict(row) for row in rows]
 
+    def delete_by_bvid(self, bvid: str) -> None:
+        with self.database.connection() as conn:
+            conn.execute("DELETE FROM summaries WHERE bvid = ?", (bvid,))
+
 
 class TaskRepository:
     def __init__(self, database: Database):
