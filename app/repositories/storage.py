@@ -92,6 +92,20 @@ class VideoRepository:
             ).fetchone()
         return int(row["total"]) if row else 0
 
+    def list_videos(self, skip: int = 0, limit: int = 20) -> tuple[list[dict[str, Any]], int]:
+        with self.database.connection() as conn:
+            total_row = conn.execute("SELECT COUNT(1) AS total FROM videos").fetchone()
+            rows = conn.execute(
+                """
+                SELECT * FROM videos
+                ORDER BY id DESC
+                LIMIT ? OFFSET ?
+                """,
+                (limit, skip),
+            ).fetchall()
+        total = int(total_row["total"]) if total_row else 0
+        return ([_row_to_dict(row) for row in rows], total)
+
 
 class SubtitleRepository:
     def __init__(self, database: Database):
@@ -205,4 +219,3 @@ def _row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
     elif "tags" in payload:
         payload["tags"] = []
     return payload
-

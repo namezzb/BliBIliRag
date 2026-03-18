@@ -77,6 +77,13 @@ class StorageRepositoryTests(TestCase):
         self.assertEqual(stored["title"], "updated title")
         self.assertEqual(stored["tags"], ["updated"])
 
+    def test_list_videos_returns_total_and_slice(self) -> None:
+        self._insert_sample_video("BV_A")
+        self._insert_sample_video("BV_B")
+        videos, total = self.videos.list_videos(skip=0, limit=1)
+        self.assertEqual(total, 2)
+        self.assertEqual(len(videos), 1)
+
     def test_task_status_transitions(self) -> None:
         self._insert_sample_video()
         task_id = self.tasks.create_task("BV1xx411c7XZ", "fetch")
@@ -117,4 +124,3 @@ class StorageRepositoryTests(TestCase):
             self.subtitles.create_subtitle(
                 "BV_MISSING", SubtitleSource.ASR_DIRECT, "content"
             )
-
