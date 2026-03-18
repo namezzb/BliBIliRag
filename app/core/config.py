@@ -20,11 +20,21 @@ class Settings(BaseModel):
     data_dir: Path = Field(default=Path("./data"))
     sqlite_path: Path = Field(default=Path("./data/videos.db"))
     chroma_path: Path = Field(default=Path("./data/chroma"))
+    bilibili_passport_base: str = "https://passport.bilibili.com"
+    bilibili_api_base: str = "https://api.bilibili.com"
+    bilibili_user_agent: str = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    )
+    bilibili_referer: str = "https://www.bilibili.com/"
+    bilibili_origin: str = "https://www.bilibili.com"
+    bilibili_session_path: Path = Field(default=Path("./data/bilibili_session.json"))
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         self.chroma_path.mkdir(parents=True, exist_ok=True)
+        self.bilibili_session_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _read_env(environ: Mapping[str, str], key: str, default: str) -> str:
@@ -48,6 +58,34 @@ def load_settings_from_env(environ: Mapping[str, str] | None = None) -> Settings
         "chroma_path": Path(
             _read_env(current_env, "CHROMA_PATH", str(data_dir / "chroma"))
         ),
+        "bilibili_passport_base": _read_env(
+            current_env, "BILIBILI_PASSPORT_BASE", "https://passport.bilibili.com"
+        ),
+        "bilibili_api_base": _read_env(
+            current_env, "BILIBILI_API_BASE", "https://api.bilibili.com"
+        ),
+        "bilibili_user_agent": _read_env(
+            current_env,
+            "BILIBILI_USER_AGENT",
+            (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 "
+                "Safari/537.36"
+            ),
+        ),
+        "bilibili_referer": _read_env(
+            current_env, "BILIBILI_REFERER", "https://www.bilibili.com/"
+        ),
+        "bilibili_origin": _read_env(
+            current_env, "BILIBILI_ORIGIN", "https://www.bilibili.com"
+        ),
+        "bilibili_session_path": Path(
+            _read_env(
+                current_env,
+                "BILIBILI_SESSION_PATH",
+                str(data_dir / "bilibili_session.json"),
+            )
+        ),
     }
     try:
         return Settings(**payload)
@@ -58,4 +96,3 @@ def load_settings_from_env(environ: Mapping[str, str] | None = None) -> Settings
 @lru_cache
 def get_settings() -> Settings:
     return load_settings_from_env()
-

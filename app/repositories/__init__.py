@@ -7,6 +7,7 @@ from app.repositories.storage import (
     TaskRepository,
     VideoRepository,
 )
+from app.repositories.session_store import SessionStore
 
 __all__ = [
     "Database",
@@ -14,4 +15,5 @@ __all__ = [
     "SubtitleRepository",
     "SummaryRepository",
     "TaskRepository",
+    "SessionStore",
 ]
