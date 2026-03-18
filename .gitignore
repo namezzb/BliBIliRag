@@ -1,5 +1,6 @@
 /.venv
 /.serena
+bilibilirag.egg-info/
 *.md
 /.idea
 __pycache__/
