@@ -42,6 +42,12 @@ class VectorStore(Protocol):
 
     def count(self) -> int: ...
 
+    def query(
+        self,
+        query_embedding: list[float],
+        top_k: int = 20,
+    ) -> dict[str, Any]: ...
+
 
 @dataclass
 class IndexDoc:
@@ -126,6 +132,46 @@ class LocalJsonVectorStore:
     def count(self) -> int:
         return len(self._load())
 
+    def query(
+        self,
+        query_embedding: list[float],
+        top_k: int = 20,
+    ) -> dict[str, Any]:
+        """查询相似文档"""
+        payload = self._load()
+        if not payload:
+            return {"ids": [], "documents": [], "metadatas": [], "distances": []}
+
+        # 计算余弦相似度
+        import math
+
+        def cosine_similarity(a: list[float], b: list[float]) -> float:
+            dot_product = sum(x * y for x, y in zip(a, b))
+            norm_a = math.sqrt(sum(x * x for x in a))
+            norm_b = math.sqrt(sum(x * x for x in b))
+            if norm_a == 0 or norm_b == 0:
+                return 0.0
+            return dot_product / (norm_a * norm_b)
+
+        # 计算所有文档的相似度
+        similarities = []
+        for item in payload:
+            embedding = item.get("embedding", [])
+            similarity = cosine_similarity(query_embedding, embedding)
+            similarities.append((similarity, item))
+
+        # 排序并取 Top K
+        similarities.sort(key=lambda x: x[0], reverse=True)
+        top_results = similarities[:top_k]
+
+        # 构建返回结果
+        return {
+            "ids": [item["id"] for _, item in top_results],
+            "documents": [item["document"] for _, item in top_results],
+            "metadatas": [item["metadata"] for _, item in top_results],
+            "distances": [1 - sim for sim, _ in top_results],  # 转换为距离
+        }
+
     def _load(self) -> list[dict[str, Any]]:
         if not self.storage_path.exists():
             return []
@@ -170,6 +216,23 @@ class ChromaDBVectorStore:
 
     def count(self) -> int:
         return self.collection.count()
+
+    def query(
+        self,
+        query_embedding: list[float],
+        top_k: int = 20,
+    ) -> dict[str, Any]:
+        """查询相似文档"""
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+        )
+        return {
+            "ids": results["ids"][0] if results["ids"] else [],
+            "documents": results["documents"][0] if results["documents"] else [],
+            "metadatas": results["metadatas"][0] if results["metadatas"] else [],
+            "distances": results["distances"][0] if results["distances"] else [],
+        }
 
 
 class IndexingServiceError(RuntimeError):

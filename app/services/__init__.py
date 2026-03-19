@@ -7,6 +7,14 @@ from app.services.indexing import (
     IndexingService,
     IndexingServiceError,
     LocalJsonVectorStore,
+    ChromaDBVectorStore,
+)
+from app.services.rag_retrieval import (
+    RAGRetrievalService,
+    RAGRetrievalError,
+    RAGChain,
+    SimpleRetriever,
+    MultiQueryRetriever,
 )
 from app.services.summary import SummaryService, SummaryServiceError
 from app.services.subtitle import SubtitleService, clean_subtitle_text
@@ -21,6 +29,12 @@ __all__ = [
     "IndexingService",
     "IndexingServiceError",
     "LocalJsonVectorStore",
+    "ChromaDBVectorStore",
+    "RAGRetrievalService",
+    "RAGRetrievalError",
+    "RAGChain",
+    "SimpleRetriever",
+    "MultiQueryRetriever",
     "SummaryService",
     "SummaryServiceError",
     "SubtitleService",
