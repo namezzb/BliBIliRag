@@ -26,6 +26,7 @@ from app.services.rag_self_rag import (
 )
 from app.services.summary import SummaryService, SummaryServiceError
 from app.services.subtitle import SubtitleService, clean_subtitle_text
+from app.services.task_queue import TaskQueue, Task, TaskStatus, TaskType
 
 __all__ = [
     "BilibiliAPIClient",
@@ -51,4 +52,8 @@ __all__ = [
     "SummaryServiceError",
     "SubtitleService",
     "clean_subtitle_text",
+    "TaskQueue",
+    "Task",
+    "TaskStatus",
+    "TaskType",
 ]

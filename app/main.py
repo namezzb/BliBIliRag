@@ -6,6 +6,9 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.health import router as health_router
 from app.api.routes.subtitles import router as subtitles_router
 from app.api.routes.videos import router as videos_router
+from app.api.routes.search import router as search_router
+from app.api.routes.chat import router as chat_router
+from app.api.routes.tasks import router as tasks_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
@@ -24,6 +27,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(auth_router)
     application.include_router(videos_router)
     application.include_router(subtitles_router)
+    application.include_router(search_router)
+    application.include_router(chat_router)
+    application.include_router(tasks_router)
     register_exception_handlers(application)
     return application
 

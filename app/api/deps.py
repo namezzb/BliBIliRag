@@ -15,6 +15,7 @@ from app.services import (
 )
 from app.services.summary import DashScopeLLMProvider, SummaryService
 from app.services.indexing import IndexingService, DashScopeEmbeddingProvider
+from app.services.task_queue import TaskQueue
 
 
 def get_app_settings() -> Settings:
@@ -217,3 +218,14 @@ def get_self_rag_service(
         rag_retrieval=rag_retrieval,
         llm=llm,
     )
+
+
+@lru_cache
+def _get_cached_task_queue() -> TaskQueue:
+    """Get cached task queue instance."""
+    return TaskQueue()
+
+
+def get_task_queue() -> TaskQueue:
+    """Get task queue dependency."""
+    return _get_cached_task_queue()
