@@ -9,6 +9,9 @@ from app.services import (
     BilibiliAuthService,
     BilibiliContentService,
     SubtitleService,
+    RAGRetrievalService,
+    LLMRoutingService,
+    SelfRAGService,
 )
 from app.services.summary import DashScopeLLMProvider, SummaryService
 from app.services.indexing import IndexingService, DashScopeEmbeddingProvider
@@ -126,4 +129,91 @@ def get_indexing_service(
         video_repository=video_repository,
         summary_repository=summary_repository,
         embedding_provider=embedding_provider,
+    )
+
+
+def get_rag_retrieval_service(
+    settings: Settings = Depends(get_app_settings),
+    indexing_service: IndexingService = Depends(get_indexing_service),
+) -> RAGRetrievalService:
+    """获取 RAG 检索服务"""
+    from app.services.rag_retrieval import RAGRetrievalService
+    from app.services.summary import DashScopeLLMProvider
+
+    # 获取向量存储
+    vector_store = indexing_service.vector_store
+
+    # 获取 LLM
+    llm = None
+    if settings.dashscope_api_key:
+        llm_provider = DashScopeLLMProvider(
+            api_key=settings.dashscope_api_key,
+            model=settings.dashscope_model
+        )
+        # 创建 LangChain LLM 包装器
+        from langchain_community.llms import OpenAI
+        llm = OpenAI(
+            api_key=settings.dashscope_api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model=settings.dashscope_model,
+        )
+
+    # 获取 embedding provider
+    embedding_provider = indexing_service.embedding_provider
+
+    return RAGRetrievalService(
+        vector_store=vector_store,
+        llm=llm,
+        embedding_provider=embedding_provider,
+        cohere_api_key=settings.cohere_api_key if hasattr(settings, 'cohere_api_key') else None,
+    )
+
+
+def get_rag_routing_service(
+    settings: Settings = Depends(get_app_settings),
+    indexing_service: IndexingService = Depends(get_indexing_service),
+) -> LLMRoutingService:
+    """获取 LLM 路由服务"""
+    from app.services.rag_routing import LLMRoutingService
+    from app.services.summary import DashScopeLLMProvider
+
+    # 获取 LLM
+    llm = None
+    if settings.dashscope_api_key:
+        from langchain_community.llms import OpenAI
+        llm = OpenAI(
+            api_key=settings.dashscope_api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model=settings.dashscope_model,
+        )
+
+    # 获取 embedding provider
+    embedding_provider = indexing_service.embedding_provider
+
+    return LLMRoutingService(
+        llm=llm,
+        embedding_provider=embedding_provider,
+    )
+
+
+def get_self_rag_service(
+    settings: Settings = Depends(get_app_settings),
+    rag_retrieval: RAGRetrievalService = Depends(get_rag_retrieval_service),
+) -> SelfRAGService:
+    """获取 Self-RAG 服务"""
+    from app.services.rag_self_rag import SelfRAGService
+
+    # 获取 LLM
+    llm = None
+    if settings.dashscope_api_key:
+        from langchain_community.llms import OpenAI
+        llm = OpenAI(
+            api_key=settings.dashscope_api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model=settings.dashscope_model,
+        )
+
+    return SelfRAGService(
+        rag_retrieval=rag_retrieval,
+        llm=llm,
     )

@@ -16,6 +16,14 @@ from app.services.rag_retrieval import (
     SimpleRetriever,
     MultiQueryRetriever,
 )
+from app.services.rag_routing import (
+    LLMRoutingService,
+    LLMRoutingError,
+)
+from app.services.rag_self_rag import (
+    SelfRAGService,
+    SelfRAGError,
+)
 from app.services.summary import SummaryService, SummaryServiceError
 from app.services.subtitle import SubtitleService, clean_subtitle_text
 
@@ -35,6 +43,10 @@ __all__ = [
     "RAGChain",
     "SimpleRetriever",
     "MultiQueryRetriever",
+    "LLMRoutingService",
+    "LLMRoutingError",
+    "SelfRAGService",
+    "SelfRAGError",
     "SummaryService",
     "SummaryServiceError",
     "SubtitleService",
