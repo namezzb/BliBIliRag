@@ -6,7 +6,9 @@ from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
+import hashlib
 import json
+import time
 
 from app.core.config import Settings
 from app.repositories import SessionStore
@@ -25,6 +27,8 @@ class BilibiliAuthError(RuntimeError):
 class BilibiliAPIClient:
     timeout_seconds: int = 10
     open_url: OpenUrlHandler = urlopen
+    _wbi_keys: tuple[str, str] | None = None
+    _wbi_keys_expire: float = 0.0
 
     def get_json(
         self,
@@ -58,6 +62,59 @@ class BilibiliAPIClient:
             message = payload.get("message") or payload.get("msg") or "Bilibili API error"
             raise BilibiliAuthError(message, 502)
         return payload
+
+    def get_json_with_wbi(
+        self,
+        url: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        params = params or {}
+        img_key, sub_key = self._get_wbi_keys(headers)
+        signed_params = self._sign_wbi(params, img_key, sub_key)
+        return self.get_json(url, params=signed_params, headers=headers)
+
+    def _get_wbi_keys(self, headers: dict[str, str] | None) -> tuple[str, str]:
+        if self._wbi_keys and time.time() < self._wbi_keys_expire:
+            return self._wbi_keys
+
+        nav_url = "https://api.bilibili.com/x/web-interface/nav"
+        payload = self.get_json(nav_url, headers=headers)
+        data = payload.get("data") or {}
+        wbi_img = data.get("wbi_img") or {}
+        img_url = wbi_img.get("img_url", "")
+        sub_url = wbi_img.get("sub_url", "")
+
+        img_key = img_url.split("/")[-1].split(".")[0] if img_url else ""
+        sub_key = sub_url.split("/")[-1].split(".")[0] if sub_url else ""
+
+        if not img_key or not sub_key:
+            raise BilibiliAuthError("Failed to extract WBI keys", 502)
+
+        self._wbi_keys = (img_key, sub_key)
+        self._wbi_keys_expire = time.time() + 3600
+        return self._wbi_keys
+
+    @staticmethod
+    def _sign_wbi(params: dict[str, Any], img_key: str, sub_key: str) -> dict[str, Any]:
+        mixin_key_enc_tab = [
+            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
+            27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13,
+            37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4,
+            22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
+        ]
+        raw_key = img_key + sub_key
+        mixin_key = "".join(raw_key[i] for i in mixin_key_enc_tab)[:32]
+
+        signed_params = params.copy()
+        signed_params["wts"] = int(time.time())
+
+        sorted_keys = sorted(signed_params.keys())
+        query = "&".join(f"{k}={signed_params[k]}" for k in sorted_keys)
+        w_rid = hashlib.md5((query + mixin_key).encode()).hexdigest()
+
+        signed_params["w_rid"] = w_rid
+        return signed_params
 
 
 class BilibiliAuthService:

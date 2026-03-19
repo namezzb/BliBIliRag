@@ -29,6 +29,10 @@ class Settings(BaseModel):
     bilibili_referer: str = "https://www.bilibili.com/"
     bilibili_origin: str = "https://www.bilibili.com"
     bilibili_session_path: Path = Field(default=Path("./data/bilibili_session.json"))
+    dashscope_api_key: str = Field(default="sk-f37f2520fb8348d2b4dd7612f13cf027")
+    dashscope_model: str = Field(default="qwen3.5-flash")
+    dashscope_embedding_model: str = Field(default="text-embedding-v3")
+    use_chromadb: bool = Field(default=True)
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -86,6 +90,10 @@ def load_settings_from_env(environ: Mapping[str, str] | None = None) -> Settings
                 str(data_dir / "bilibili_session.json"),
             )
         ),
+        "dashscope_api_key": _read_env(current_env, "DASHSCOPE_API_KEY", ""),
+        "dashscope_model": _read_env(current_env, "DASHSCOPE_MODEL", "qwen-turbo"),
+        "dashscope_embedding_model": _read_env(current_env, "DASHSCOPE_EMBEDDING_MODEL", "text-embedding-v3"),
+        "use_chromadb": _read_env(current_env, "USE_CHROMADB", "true").lower() == "true",
     }
     try:
         return Settings(**payload)

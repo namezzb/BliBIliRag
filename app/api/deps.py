@@ -3,13 +3,15 @@ from functools import lru_cache
 from fastapi import Depends
 
 from app.core.config import Settings, get_settings
-from app.repositories import Database, SessionStore, SubtitleRepository, VideoRepository
+from app.repositories import Database, SessionStore, SubtitleRepository, SummaryRepository, VideoRepository
 from app.services import (
     BilibiliAPIClient,
     BilibiliAuthService,
     BilibiliContentService,
     SubtitleService,
 )
+from app.services.summary import DashScopeLLMProvider, SummaryService
+from app.services.indexing import IndexingService, DashScopeEmbeddingProvider
 
 
 def get_app_settings() -> Settings:
@@ -56,6 +58,12 @@ def get_subtitle_repository(
     return SubtitleRepository(database)
 
 
+def get_summary_repository(
+    database: Database = Depends(get_database),
+) -> SummaryRepository:
+    return SummaryRepository(database)
+
+
 def get_bilibili_content_service(
     settings: Settings = Depends(get_app_settings),
     session_store: SessionStore = Depends(get_session_store),
@@ -79,4 +87,43 @@ def get_subtitle_service(
         api_client=BilibiliAPIClient(),
         session_store=session_store,
         subtitle_repository=subtitle_repository,
+    )
+
+
+def get_summary_service(
+    settings: Settings = Depends(get_app_settings),
+    video_repository: VideoRepository = Depends(get_video_repository),
+    subtitle_repository: SubtitleRepository = Depends(get_subtitle_repository),
+    summary_repository: SummaryRepository = Depends(get_summary_repository),
+) -> SummaryService:
+    llm_provider = None
+    if settings.dashscope_api_key:
+        llm_provider = DashScopeLLMProvider(
+            api_key=settings.dashscope_api_key,
+            model=settings.dashscope_model
+        )
+    return SummaryService(
+        video_repository=video_repository,
+        subtitle_repository=subtitle_repository,
+        summary_repository=summary_repository,
+        llm_provider=llm_provider,
+    )
+
+
+def get_indexing_service(
+    settings: Settings = Depends(get_app_settings),
+    video_repository: VideoRepository = Depends(get_video_repository),
+    summary_repository: SummaryRepository = Depends(get_summary_repository),
+) -> IndexingService:
+    embedding_provider = None
+    if settings.dashscope_api_key:
+        embedding_provider = DashScopeEmbeddingProvider(
+            api_key=settings.dashscope_api_key,
+            model=settings.dashscope_embedding_model,
+        )
+    return IndexingService(
+        settings=settings,
+        video_repository=video_repository,
+        summary_repository=summary_repository,
+        embedding_provider=embedding_provider,
     )

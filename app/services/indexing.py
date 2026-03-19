@@ -6,6 +6,20 @@ from typing import Any, Protocol
 import hashlib
 import json
 import math
+import time
+from http import HTTPStatus
+
+try:
+    import chromadb
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    CHROMADB_AVAILABLE = False
+
+try:
+    from dashscope import TextEmbedding
+    DASHSCOPE_EMBEDDING_AVAILABLE = True
+except ImportError:
+    DASHSCOPE_EMBEDDING_AVAILABLE = False
 
 from app.core.config import Settings
 from app.repositories import SummaryRepository, VideoRepository
@@ -52,6 +66,31 @@ class DeterministicEmbeddingProvider:
             values[index] = float(source) / 255.0
         norm = math.sqrt(sum(value * value for value in values)) or 1.0
         return [value / norm for value in values]
+
+
+class DashScopeEmbeddingProvider:
+    def __init__(self, api_key: str, model: str = "text-embedding-v3"):
+        if not DASHSCOPE_EMBEDDING_AVAILABLE:
+            raise RuntimeError("dashscope not installed")
+        self.api_key = api_key
+        self.model = model
+
+    def embed(self, text: str) -> list[float]:
+        """单个文本向量化"""
+        return self.embed_batch([text])[0]
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        """批量文本向量化"""
+        response = TextEmbedding.call(
+            model=self.model,
+            input=texts,
+            api_key=self.api_key,
+        )
+
+        if response.status_code != HTTPStatus.OK:
+            raise RuntimeError(f"DashScope embedding error: {response.message}")
+
+        return [emb.embedding for emb in response.output.embeddings]
 
 
 class LocalJsonVectorStore:
@@ -102,6 +141,37 @@ class LocalJsonVectorStore:
         )
 
 
+class ChromaDBVectorStore:
+    def __init__(self, persist_directory: Path, collection_name: str = "bilibili_videos"):
+        if not CHROMADB_AVAILABLE:
+            raise RuntimeError("chromadb not installed")
+        self.client = chromadb.PersistentClient(path=str(persist_directory))
+        self.collection = self.client.get_or_create_collection(
+            name=collection_name,
+            configuration={"hnsw": {"space": "cosine"}},
+        )
+
+    def upsert(
+        self,
+        ids: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]],
+        documents: list[str],
+    ) -> None:
+        self.collection.upsert(
+            ids=ids,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            documents=documents,
+        )
+
+    def delete_by_bvid(self, bvid: str) -> None:
+        self.collection.delete(where={"bvid": bvid})
+
+    def count(self) -> int:
+        return self.collection.count()
+
+
 class IndexingServiceError(RuntimeError):
     def __init__(self, message: str, status_code: int = 400):
         self.message = message
@@ -122,9 +192,14 @@ class IndexingService:
         self.video_repository = video_repository
         self.summary_repository = summary_repository
         self.embedding_provider = embedding_provider or DeterministicEmbeddingProvider()
-        self.vector_store = vector_store or LocalJsonVectorStore(
-            settings.chroma_path / "bilibili_videos.json"
-        )
+        if vector_store:
+            self.vector_store = vector_store
+        elif settings.use_chromadb and CHROMADB_AVAILABLE:
+            self.vector_store = ChromaDBVectorStore(settings.chroma_path)
+        else:
+            self.vector_store = LocalJsonVectorStore(
+                settings.chroma_path / "bilibili_videos.json"
+            )
 
     def index_video(self, bvid: str) -> dict[str, Any]:
         video = self.video_repository.get_by_bvid(bvid)

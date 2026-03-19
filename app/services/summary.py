@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
+
+from openai import OpenAI
 
 from app.models import SummaryType
 from app.repositories import SubtitleRepository, SummaryRepository, VideoRepository
@@ -11,6 +13,36 @@ SOURCE_PRIORITY = {
     "asr_local": 2,
     "fallback": 3,
 }
+
+
+class LLMProvider(Protocol):
+    def generate_summary(self, text: str, max_length: int = 200) -> str: ...
+    def extract_key_points(self, text: str, num_points: int = 5) -> list[str]: ...
+
+
+class DashScopeLLMProvider:
+    def __init__(self, api_key: str, model: str = "qwen-turbo"):
+        self.model = model
+        self._client = OpenAI(
+            api_key=api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        )
+
+    def generate_summary(self, text: str, max_length: int = 200) -> str:
+        prompt = f"请将以下内容总结为{max_length}字以内的摘要：\n\n{text[:4000]}"
+        return self._call_api(prompt)
+
+    def extract_key_points(self, text: str, num_points: int = 5) -> list[str]:
+        prompt = f"请从以下内容中提取{num_points}个关键要点，每个要点一行：\n\n{text[:4000]}"
+        response = self._call_api(prompt)
+        return [line.strip() for line in response.split("\n") if line.strip()][:num_points]
+
+    def _call_api(self, prompt: str) -> str:
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.choices[0].message.content
 
 
 class SummaryServiceError(RuntimeError):
@@ -26,10 +58,12 @@ class SummaryService:
         video_repository: VideoRepository,
         subtitle_repository: SubtitleRepository,
         summary_repository: SummaryRepository,
+        llm_provider: LLMProvider | None = None,
     ):
         self.video_repository = video_repository
         self.subtitle_repository = subtitle_repository
         self.summary_repository = summary_repository
+        self.llm_provider = llm_provider
 
     def generate_and_store(
         self,
@@ -120,27 +154,44 @@ class SummaryService:
             output.append(candidate)
         return output
 
-    @staticmethod
-    def _build_video_summary(video: dict[str, Any], lines: list[str]) -> str:
+    def _build_video_summary(self, video: dict[str, Any], lines: list[str]) -> str:
+        full_text = "\n".join(lines)
+        if self.llm_provider:
+            try:
+                return self.llm_provider.generate_summary(full_text, max_length=200)
+            except Exception:
+                pass
         head = "；".join(lines[:4])
         title = str(video.get("title") or "")
         if title and title not in head:
             return f"{title}：{head}" if head else title
         return head or title
 
-    @staticmethod
-    def _build_segment_summaries(lines: list[str], segment_size: int) -> list[str]:
+    def _build_segment_summaries(self, lines: list[str], segment_size: int) -> list[str]:
         size = max(1, segment_size)
         output: list[str] = []
         for start in range(0, len(lines), size):
             chunk = lines[start : start + size]
+            segment_text = "\n".join(chunk)
+            if self.llm_provider:
+                try:
+                    summary = self.llm_provider.generate_summary(segment_text, max_length=150)
+                    output.append(summary)
+                    continue
+                except Exception:
+                    pass
             segment = "；".join(chunk)
             output.append(segment[:240])
         return output
 
-    @staticmethod
-    def _build_key_points(lines: list[str], keypoint_limit: int) -> list[str]:
+    def _build_key_points(self, lines: list[str], keypoint_limit: int) -> list[str]:
         limit = max(1, keypoint_limit)
+        full_text = "\n".join(lines)
+        if self.llm_provider:
+            try:
+                return self.llm_provider.extract_key_points(full_text, num_points=limit)
+            except Exception:
+                pass
         output: list[str] = []
         for line in lines:
             if len(line) < 6:

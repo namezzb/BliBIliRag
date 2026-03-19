@@ -72,7 +72,7 @@ class SubtitleService:
                 )
 
         audio_url = self._get_audio_url(bvid=bvid, cid=int(cid), headers=headers)
-        if audio_url:
+        if audio_url and self._probe_audio_url(audio_url, headers):
             try:
                 direct_text = self.asr_engine.transcribe_from_url(audio_url, headers)
                 cleaned_direct = clean_subtitle_text(direct_text)
@@ -132,7 +132,7 @@ class SubtitleService:
         fallback_url = f"{self.settings.bilibili_api_base}/x/player/v2"
         params = {"bvid": bvid, "cid": cid}
         try:
-            payload = self.api_client.get_json(wbi_url, params=params, headers=headers)
+            payload = self.api_client.get_json_with_wbi(wbi_url, params=params, headers=headers)
             return payload.get("data") or {}
         except BilibiliAuthError:
             payload = self.api_client.get_json(fallback_url, params=params, headers=headers)
@@ -143,7 +143,7 @@ class SubtitleService:
         fallback_url = f"{self.settings.bilibili_api_base}/x/player/playurl"
         params = {"bvid": bvid, "cid": cid, "fnval": 16, "qn": 80}
         try:
-            payload = self.api_client.get_json(wbi_url, params=params, headers=headers)
+            payload = self.api_client.get_json_with_wbi(wbi_url, params=params, headers=headers)
             data = payload.get("data") or {}
             audio_url = self._extract_audio_url(data)
             if audio_url:
@@ -153,6 +153,17 @@ class SubtitleService:
 
         payload = self.api_client.get_json(fallback_url, params=params, headers=headers)
         return self._extract_audio_url(payload.get("data") or {})
+
+    @staticmethod
+    def _probe_audio_url(audio_url: str, headers: dict[str, str]) -> bool:
+        if not audio_url:
+            return False
+        try:
+            request = Request(audio_url, headers=headers, method="HEAD")
+            with urlopen(request, timeout=5) as response:
+                return response.status == 200
+        except Exception:
+            return False
 
     @staticmethod
     def _extract_subtitle_url(player_data: dict[str, Any]) -> tuple[str, str | None]:
