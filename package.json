@@ -1,0 +1,26 @@
+{
+  "name": "blibilirag",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/namezzb/BliBIliRag.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/namezzb/BliBIliRag/issues"
+  },
+  "homepage": "https://github.com/namezzb/BliBIliRag#readme",
+  "devDependencies": {
+    "@types/node": "^25.5.0"
+  }
+}

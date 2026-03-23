@@ -210,7 +210,7 @@ class RAGRetrievalService:
     def __init__(
         self,
         vector_store: VectorStore,
-        llm: BaseLanguageModel,
+        llm: BaseLanguageModel | None,
         embedding_provider: Any | None = None,
         cohere_api_key: str | None = None,
     ):
@@ -225,12 +225,14 @@ class RAGRetrievalService:
             embedding_provider=embedding_provider,
         )
 
-        # 创建 RAG chain
-        self.rag_chain = RAGChain(
-            retriever=self.retriever,
-            llm=llm,
-            use_multi_query=True,
-        )
+        # 创建 RAG chain（无 LLM 时降级为仅检索模式）
+        self.rag_chain = None
+        if llm is not None:
+            self.rag_chain = RAGChain(
+                retriever=self.retriever,
+                llm=llm,
+                use_multi_query=True,
+            )
 
         # 初始化 Cohere 客户端
         self.cohere_client = None
@@ -247,7 +249,7 @@ class RAGRetrievalService:
 
         try:
             # 获取相关文档
-            docs = self.rag_chain.retriever.get_relevant_documents(query)
+            docs = self.retriever.get_relevant_documents(query)
 
             # 转换为字典格式
             results = []
@@ -306,9 +308,12 @@ class RAGRetrievalService:
 
     def invoke(self, query: str) -> str:
         """执行 RAG 查询并生成答案"""
+        if self.rag_chain is None:
+            raise RAGRetrievalError("llm_not_configured", 503)
         return self.rag_chain.invoke(query)
 
     async def ainvoke(self, query: str) -> str:
         """异步执行 RAG 查询"""
+        if self.rag_chain is None:
+            raise RAGRetrievalError("llm_not_configured", 503)
         return await self.rag_chain.ainvoke(query)
-

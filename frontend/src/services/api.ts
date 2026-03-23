@@ -12,6 +12,13 @@ export interface Video {
   like_count?: number
 }
 
+export interface FavoriteFolder {
+  id: number
+  title: string
+  media_count: number
+  is_default: boolean
+}
+
 export interface SearchResult {
   bvid: string
   title: string
@@ -52,6 +59,18 @@ class ApiClient {
   }
 
   // Video APIs
+  async getFavorites(): Promise<FavoriteFolder[]> {
+    const response = await this.client.get('/api/favorites')
+    return response.data
+  }
+
+  async importFavorites(folderIds: number[]): Promise<{ status: string; folders: number[]; scanned: number; imported: number }> {
+    const response = await this.client.post('/api/videos/import', {
+      folder_ids: folderIds,
+    })
+    return response.data
+  }
+
   async getVideos(skip: number = 0, limit: number = 20): Promise<{ videos: Video[]; total: number }> {
     const response = await this.client.get('/api/videos', {
       params: { skip, limit },

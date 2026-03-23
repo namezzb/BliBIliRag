@@ -11,18 +11,20 @@ export default function Layout({ children }: LayoutProps) {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <Header />
 
-        {/* Page content */}
         <main className="flex-1 overflow-auto">
-          <div className="p-6">{children}</div>
+          <div
+            className={`mx-auto w-full max-w-[1600px] px-4 pb-6 pt-5 sm:px-6 lg:px-8 transition-all duration-200 ${
+              sidebarOpen ? '' : 'max-w-[1680px]'
+            }`}
+          >
+            {children}
+          </div>
         </main>
       </div>
     </div>

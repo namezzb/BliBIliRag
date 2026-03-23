@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Video, Task } from '@/services/api'
+import { Task } from '@/services/api'
 
 export interface Conversation {
   id: string

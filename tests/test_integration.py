@@ -276,6 +276,12 @@ class TestAPIIntegration:
 
     def test_cors_headers(self, client):
         """Test CORS headers."""
-        response = client.options("/api/v1/search")
-        # Should not fail
-        assert response.status_code in [200, 405]
+        response = client.options(
+            "/api/v1/search",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"

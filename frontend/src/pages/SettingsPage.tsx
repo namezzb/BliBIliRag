@@ -10,102 +10,84 @@ export default function SettingsPage() {
   const handleSaveSettings = () => {
     localStorage.setItem('apiUrl', apiUrl)
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setSaved(false), 1600)
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      {/* Header */}
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">设置</h2>
+    <div className="space-y-6 animate-fade-in">
+      <section className="panel p-5 sm:p-6">
+        <h2 className="text-3xl font-bold" style={{ color: 'var(--text-main)' }}>
+          系统设置
+        </h2>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-subtle)' }}>
+          配置主题与联调地址，管理本地缓存状态。
+        </p>
+      </section>
 
-      {/* Success message */}
       {saved && (
-        <div className="p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded-lg">
+        <section className="panel p-4 text-sm" style={{ color: '#0f7b48', borderColor: '#bde9cf', background: '#ecfbf2' }}>
           设置已保存
-        </div>
+        </section>
       )}
 
-      {/* Theme settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">外观</h3>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">主题</label>
-          <div className="flex gap-4">
-            <button
-              onClick={() => setTheme('light')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                theme === 'light'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-              }`}
-            >
-              ☀️ 浅色
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-              }`}
-            >
-              🌙 深色
-            </button>
-          </div>
+      <section className="panel p-5 sm:p-6 space-y-4">
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>
+          外观
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setTheme('light')}
+            className={theme === 'light' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+          >
+            浅色模式
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={theme === 'dark' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+          >
+            深色模式
+          </button>
         </div>
-      </div>
+      </section>
 
-      {/* API settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">API 配置</h3>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">API 地址</label>
-          <input
-            type="text"
-            value={apiUrl}
-            onChange={(e) => setApiUrl(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="http://localhost:8000"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            后端 API 服务器地址，默认为 http://localhost:8000
-          </p>
-        </div>
-
-        <button
-          onClick={handleSaveSettings}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
+      <section className="panel p-5 sm:p-6 space-y-4">
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>
+          API 配置
+        </h3>
+        <input
+          type="text"
+          value={apiUrl}
+          onChange={(e) => setApiUrl(e.target.value)}
+          className="input-base"
+          placeholder="http://localhost:8000"
+        />
+        <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+          仅用于本地开发联调显示，不会覆盖 `VITE_API_URL` 环境变量。
+        </p>
+        <button onClick={handleSaveSettings} className="btn-primary">
           保存设置
         </button>
-      </div>
+      </section>
 
-      {/* About */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">关于</h3>
-
-        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-          <p>
-            <strong>应用名称:</strong> B站收藏夹智能管理系统
-          </p>
-          <p>
-            <strong>版本:</strong> 0.1.0
-          </p>
-          <p>
-            <strong>技术栈:</strong> React + TypeScript + Tailwind CSS
-          </p>
-          <p>
-            <strong>后端:</strong> FastAPI + LangChain + ChromaDB
-          </p>
+      <section className="panel p-5 sm:p-6 space-y-3">
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>
+          关于
+        </h3>
+        <div className="grid gap-2 text-sm" style={{ color: 'var(--text-subtle)' }}>
+          <p>应用名称：B站收藏夹智能管理系统</p>
+          <p>版本：0.1.0</p>
+          <p>技术栈：React + TypeScript + Tailwind CSS</p>
+          <p>后端：FastAPI + LangChain + ChromaDB</p>
         </div>
-      </div>
+      </section>
 
-      {/* Data management */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">数据管理</h3>
-
+      <section className="panel p-5 sm:p-6">
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>
+          数据管理
+        </h3>
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-subtle)' }}>
+          清空后将移除本地缓存与会话偏好。
+        </p>
         <button
           onClick={() => {
             if (confirm('确定要清空所有本地数据吗？')) {
@@ -113,11 +95,11 @@ export default function SettingsPage() {
               alert('本地数据已清空')
             }
           }}
-          className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+          className="btn-danger mt-4"
         >
           清空本地数据
         </button>
-      </div>
+      </section>
     </div>
   )
 }
